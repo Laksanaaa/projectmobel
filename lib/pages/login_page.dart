@@ -1,7 +1,5 @@
 
 import 'package:flutter/material.dart';
-
-import '../models/app_user.dart';
 import '../services/auth_service.dart';
 import 'home_page.dart';
 
@@ -31,53 +29,58 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  Future<void> _login() async {
-    FocusScope.of(context).unfocus();
+  
+Future<void> _login() async {
+  if (!_formKey.currentState!.validate()) {
+    return;
+  }
 
-    if (!_formKey.currentState!.validate()) {
+  setState(() {
+    _isLoading = true;
+    _errorMessage = null;
+  });
+
+  try {
+    final user = await _authService.login(
+      username: _usernameController.text,
+      password: _passwordController.text,
+    );
+
+    if (!mounted) return;
+
+    if (user == null) {
+      setState(() {
+        _errorMessage = 'Username atau password salah.';
+      });
       return;
     }
 
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HomePage(user: user),
+      ),
+    );
+  } on AuthException catch (e) {
+    if (!mounted) return;
+
     setState(() {
-      _isLoading = true;
-      _errorMessage = null;
+      _errorMessage = e.message;
     });
+  } catch (_) {
+    if (!mounted) return;
 
-    try {
-      final AppUser? user = await _authService.login(
-        username: _usernameController.text,
-        password: _passwordController.text,
-      );
-
-      if (!mounted) return;
-
-      if (user == null) {
-        setState(() {
-          _errorMessage = 'Username atau password salah.';
-          _isLoading = false;
-        });
-        return;
-      }
-
+    setState(() {
+      _errorMessage = 'Terjadi kesalahan. Silakan coba lagi.';
+    });
+  } finally {
+    if (mounted) {
       setState(() {
-        _isLoading = false;
-      });
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute<void>(
-          builder: (context) => HomePage(user: user),
-        ),
-      );
-    } catch (_) {
-      if (!mounted) return;
-
-      setState(() {
-        _errorMessage = 'Terjadi kesalahan. Silakan coba lagi.';
         _isLoading = false;
       });
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {

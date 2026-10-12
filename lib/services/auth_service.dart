@@ -1,64 +1,100 @@
 
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
+import '../config/api_config.dart';
 import '../models/app_user.dart';
 
 class AuthService {
-  // Akun contoh untuk pengujian lokal.
-  // Jangan gunakan penyimpanan password seperti ini
-  // untuk aplikasi yang dipakai secara nyata.
-  final List<_DemoAccount> _accounts = [
-    _DemoAccount(
-      user: const AppUser(
-        id: '1',
-        username: 'manager',
-        fullName: 'Manager Café',
-        role: UserRole.manager,
-      ),
-      password: 'manager123',
-    ),
-    _DemoAccount(
-      user: const AppUser(
-        id: '2',
-        username: 'akuntan',
-        fullName: 'Akuntan Café',
-        role: UserRole.akuntan,
-      ),
-      password: 'akuntan123',
-    ),
-    _DemoAccount(
-      user: const AppUser(
-        id: '3',
-        username: 'karyawan',
-        fullName: 'Karyawan Café',
-        role: UserRole.karyawan,
-      ),
-      password: 'karyawan123',
-    ),
-  ];
-
   Future<AppUser?> login({
     required String username,
     required String password,
   }) async {
     final normalizedUsername = username.trim();
 
-    for (final account in _accounts) {
-      if (account.user.username == normalizedUsername &&
-          account.password == password &&
-          account.user.isActive) {
-        return account.user;
-      }
+    if (normalizedUsername.isEmpty || password.isEmpty) {
+      throw const AuthException(
+        'Username dan password wajib diisi.',
+      );
     }
 
-    return null;
+    try {
+      final response = await http
+          .post(
+            Uri.parse(ApiConfig.loginUrl),
+            headers: {
+              'Content-Type': 'application/json; charset=UTF-8',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({
+              'username': normalizedUsername,
+              'password': password,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      final dynamic decoded = jsonDecode(response.body);
+
+      if (decoded is! Map<String, dynamic>) {
+        throw const AuthException(
+          'Format respons dari server tidak valid.',
+        );
+      }
+
+      // Kredensial salah atau akun tidak aktif.
+      if (response.statusCode == 401) {
+        return null;
+      }
+
+      // Server menolak permintaan atau mengalami masalah.
+      if (response.statusCode != 200) {
+        final message = decoded['message'];
+
+        throw AuthException(
+          message is String
+              ? message
+              : 'Server gagal memproses login.',
+        );
+      }
+
+      if (decoded['success'] != true ||
+          decoded['data'] is! Map<String, dynamic>) {
+        throw const AuthException(
+          'Respons login tidak sesuai format.',
+        );
+      }
+
+      final userData = decoded['data'] as Map<String, dynamic>;
+      final user = AppUser.fromMap(userData);
+
+      if (!user.isActive) {
+        return null;
+      }
+
+      return user;
+    } on TimeoutException {
+      throw const AuthException(
+        'Server terlalu lama merespons. Coba lagi.',
+      );
+    } on http.ClientException {
+      throw const AuthException(
+        'Tidak dapat terhubung ke server. Periksa koneksi dan URL API.',
+      );
+    } on FormatException {
+      throw const AuthException(
+        'Respons server bukan JSON yang valid.',
+      );
+    }
   }
 }
 
-class _DemoAccount {
-  final AppUser user;
-  final String password;
+class AuthException implements Exception {
+  final String message;
 
-  const _DemoAccount({
-    required this.user,
-    required this.password,
-  });
+  const AuthException(this.message);
+
+  @override
+  String toString() => message;
 }
