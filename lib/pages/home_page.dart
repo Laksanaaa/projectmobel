@@ -1,7 +1,10 @@
 
 import 'package:flutter/material.dart';
+
 import '../models/app_user.dart';
 import 'profile_page.dart';
+import 'employees_page.dart';
+import 'shifts_page.dart';
 
 class HomePage extends StatelessWidget {
   final AppUser user;
@@ -13,7 +16,7 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final menus = _getMenus(user.role);
+    final menus = _getMenus(context, user.role);
 
     return Scaffold(
       appBar: AppBar(
@@ -81,6 +84,7 @@ class HomePage extends StatelessWidget {
                     title: menu.title,
                     icon: menu.icon,
                     description: menu.description,
+                    onTap: menu.onTap,
                   );
                 },
               ),
@@ -117,7 +121,9 @@ class HomePage extends StatelessWidget {
             color: Colors.white,
             size: 36,
           ),
+
           const SizedBox(height: 16),
+
           Text(
             'Halo, ${user.fullName}!',
             style: const TextStyle(
@@ -126,7 +132,9 @@ class HomePage extends StatelessWidget {
               color: Colors.white,
             ),
           ),
+
           const SizedBox(height: 8),
+
           Text(
             'Selamat datang di sistem manajemen café.',
             style: TextStyle(
@@ -134,7 +142,9 @@ class HomePage extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.9),
             ),
           ),
+
           const SizedBox(height: 14),
+
           Container(
             padding: const EdgeInsets.symmetric(
               horizontal: 12,
@@ -162,6 +172,7 @@ class HomePage extends StatelessWidget {
     required String title,
     required IconData icon,
     required String description,
+    VoidCallback? onTap,
   }) {
     return Card(
       elevation: 1,
@@ -174,15 +185,16 @@ class HomePage extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Menu $title akan dibuat pada tahap berikutnya.',
-              ),
-            ),
-          );
-        },
+        onTap: onTap ??
+            () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Menu $title akan dibuat pada tahap berikutnya.',
+                  ),
+                ),
+              );
+            },
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(
@@ -193,7 +205,9 @@ class HomePage extends StatelessWidget {
                 size: 36,
                 color: const Color(0xFF6F4E37),
               ),
+
               const SizedBox(height: 12),
+
               Text(
                 title,
                 textAlign: TextAlign.center,
@@ -202,7 +216,9 @@ class HomePage extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+
               const SizedBox(height: 6),
+
               Text(
                 description,
                 textAlign: TextAlign.center,
@@ -218,46 +234,72 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  List<_DashboardMenu> _getMenus(UserRole role) {
+  List<_DashboardMenu> _getMenus(
+    BuildContext context,
+    UserRole role,
+  ) {
     switch (role) {
       case UserRole.manager:
-        return const [
+        return [
           _DashboardMenu(
             title: 'Karyawan',
             icon: Icons.groups_outlined,
             description: 'Kelola data karyawan',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => const EmployeesPage(),
+                ),
+              );
+            },
           ),
+
           _DashboardMenu(
             title: 'Jadwal Shift',
             icon: Icons.calendar_month_outlined,
             description: 'Atur jadwal kerja',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => const ShiftsPage(),
+                ),
+              );
+            },
           ),
-          _DashboardMenu(
+
+          const _DashboardMenu(
             title: 'Absensi',
             icon: Icons.fingerprint,
             description: 'Pantau kehadiran',
           ),
-          _DashboardMenu(
+
+          const _DashboardMenu(
             title: 'Penggajian',
             icon: Icons.payments_outlined,
             description: 'Kelola gaji karyawan',
           ),
-          _DashboardMenu(
+
+          const _DashboardMenu(
             title: 'Keuangan',
             icon: Icons.account_balance_wallet_outlined,
             description: 'Pantau keuangan café',
           ),
-          _DashboardMenu(
+
+          const _DashboardMenu(
             title: 'Inventaris',
             icon: Icons.inventory_2_outlined,
             description: 'Kelola persediaan',
           ),
-          _DashboardMenu(
+
+          const _DashboardMenu(
             title: 'Menu Café',
             icon: Icons.local_cafe_outlined,
             description: 'Kelola menu dan harga',
           ),
-          _DashboardMenu(
+
+          const _DashboardMenu(
             title: 'Laporan',
             icon: Icons.bar_chart_outlined,
             description: 'Lihat laporan operasional',
@@ -271,16 +313,19 @@ class HomePage extends StatelessWidget {
             icon: Icons.account_balance_wallet_outlined,
             description: 'Catat transaksi keuangan',
           ),
+
           _DashboardMenu(
             title: 'Penggajian',
             icon: Icons.payments_outlined,
             description: 'Periksa perhitungan gaji',
           ),
+
           _DashboardMenu(
             title: 'Laporan',
             icon: Icons.bar_chart_outlined,
             description: 'Lihat laporan keuangan',
           ),
+
           _DashboardMenu(
             title: 'Inventaris',
             icon: Icons.inventory_2_outlined,
@@ -295,20 +340,17 @@ class HomePage extends StatelessWidget {
             icon: Icons.fingerprint,
             description: 'Catat kehadiran',
           ),
+
           _DashboardMenu(
             title: 'Jadwal Shift',
             icon: Icons.calendar_month_outlined,
             description: 'Lihat jadwal pribadi',
           ),
+
           _DashboardMenu(
             title: 'Penggajian',
             icon: Icons.payments_outlined,
             description: 'Lihat informasi gaji',
-          ),
-          _DashboardMenu(
-            title: 'Tukar Shift',
-            icon: Icons.swap_horiz,
-            description: 'Ajukan pergantian shift',
           ),
         ];
     }
@@ -319,10 +361,12 @@ class _DashboardMenu {
   final String title;
   final IconData icon;
   final String description;
+  final VoidCallback? onTap;
 
   const _DashboardMenu({
     required this.title,
     required this.icon,
     required this.description,
+    this.onTap,
   });
 }
