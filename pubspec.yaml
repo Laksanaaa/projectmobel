@@ -9,7 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  geolocator: ^14.1.2
   http: ^1.6.0
+  local_auth: ^3.0.2
 
 dev_dependencies:
   flutter_test:
