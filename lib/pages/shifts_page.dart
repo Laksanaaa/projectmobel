@@ -1,13 +1,19 @@
 
 import 'package:flutter/material.dart';
 
+import '../models/app_user.dart';
 import '../models/employee.dart';
 import '../models/shift.dart';
 import '../services/employee_service.dart';
 import '../services/shift_service.dart';
 
 class ShiftsPage extends StatefulWidget {
-  const ShiftsPage({super.key});
+  final AppUser user;
+
+  const ShiftsPage({
+    super.key,
+    required this.user,
+  });
 
   @override
   State<ShiftsPage> createState() => _ShiftsPageState();
@@ -20,6 +26,40 @@ class _ShiftsPageState extends State<ShiftsPage> {
   late Future<List<Shift>> _shiftsFuture;
 
   String _selectedBranch = 'Semua';
+  DateTime _weekStart = _mondayOf(DateTime.now());
+
+  bool get _isManager => widget.user.role == UserRole.manager;
+
+  static DateTime _mondayOf(DateTime date) {
+    final day = DateTime(date.year, date.month, date.day);
+    return day.subtract(Duration(days: day.weekday - 1));
+  }
+
+  String _dateKey(DateTime date) {
+    return '${date.year}-'
+        '${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/'
+        '${date.year}';
+  }
+
+  String _dayName(int weekday) {
+    const days = [
+      'Senin',
+      'Selasa',
+      'Rabu',
+      'Kamis',
+      'Jumat',
+      'Sabtu',
+      'Minggu',
+    ];
+
+    return days[weekday - 1];
+  }
 
   @override
   void initState() {
@@ -28,11 +68,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
   }
 
   void _loadShifts() {
-    _shiftsFuture = _shiftService.getShifts(
-      branch: _selectedBranch == 'Semua'
-          ? null
-          : _selectedBranch,
-    );
+    _shiftsFuture = _shiftService.getShifts();
   }
 
   Future<void> _refreshShifts() async {
@@ -40,7 +76,18 @@ class _ShiftsPageState extends State<ShiftsPage> {
     await _shiftsFuture;
   }
 
+  void _changeWeek(int numberOfWeeks) {
+    setState(() {
+      _weekStart = _weekStart.add(
+        Duration(days: 7 * numberOfWeeks),
+      );
+    });
+  }
+
   Future<void> _showAddShiftDialog() async {
+    // Pemeriksaan role sebelum membuka dialog.
+    if (!_isManager) return;
+
     List<Employee> employees;
 
     try {
@@ -148,11 +195,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
                     const SizedBox(height: 8),
                     OutlinedButton.icon(
                       icon: const Icon(Icons.calendar_month),
-                      label: Text(
-                        '${selectedDate.day.toString().padLeft(2, '0')}/'
-                        '${selectedDate.month.toString().padLeft(2, '0')}/'
-                        '${selectedDate.year}',
-                      ),
+                      label: Text(_formatDate(selectedDate)),
                       onPressed: isSaving
                           ? null
                           : () async {
@@ -200,10 +243,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
                             return;
                           }
 
-                          final date =
-                              '${selectedDate.year}-'
-                              '${selectedDate.month.toString().padLeft(2, '0')}-'
-                              '${selectedDate.day.toString().padLeft(2, '0')}';
+                          final date = _dateKey(selectedDate);
 
                           setDialogState(() {
                             isSaving = true;
@@ -266,6 +306,173 @@ class _ShiftsPageState extends State<ShiftsPage> {
     }
   }
 
+  Widget _buildBranchSchedule(
+    String branch,
+    List<Shift> shifts,
+  ) {
+    final branchName = branch == 'A' ? 'Cabang A' : 'Cabang B';
+    final shiftTime =
+        branch == 'A' ? '18.00–01.00' : '19.30–03.30';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Theme.of(context)
+              .colorScheme
+              .surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 17,
+                  child: Text(branch),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    branchName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Text(
+                  shiftTime,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            if (shifts.isEmpty)
+              const Text(
+                'Belum ada karyawan yang dijadwalkan.',
+                style: TextStyle(fontSize: 13),
+              )
+            else
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: shifts.map((shift) {
+                  return Chip(
+                    avatar: const Icon(
+                      Icons.person_outline,
+                      size: 18,
+                    ),
+                    label: Text(shift.employeeName),
+                  );
+                }).toList(),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeeklySchedule(List<Shift> allShifts) {
+    final weekDates = List.generate(
+      7,
+      (index) => _weekStart.add(Duration(days: index)),
+    );
+
+    final weekEnd = _weekStart.add(const Duration(days: 7));
+
+    final weekShifts = allShifts.where((shift) {
+      final date = DateTime.tryParse(shift.shiftDate);
+      if (date == null) return false;
+
+      final normalizedDate = DateTime(date.year, date.month, date.day);
+
+      final sameWeek = !normalizedDate.isBefore(_weekStart) &&
+          normalizedDate.isBefore(weekEnd);
+
+      final sameBranch = _selectedBranch == 'Semua' ||
+          shift.branch == _selectedBranch;
+
+      return sameWeek && sameBranch;
+    }).toList();
+
+    return RefreshIndicator(
+      onRefresh: _refreshShifts,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 90),
+        children: [
+          if (weekShifts.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                'Belum ada jadwal shift pada minggu ini.',
+                textAlign: TextAlign.center,
+              ),
+            ),
+          for (final date in weekDates)
+            Builder(
+              builder: (context) {
+                final dateShifts = weekShifts.where((shift) {
+                  return shift.shiftDate == _dateKey(date);
+                }).toList();
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  clipBehavior: Clip.antiAlias,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _dayName(date.weekday),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                            ),
+                            Text(
+                              _formatDate(date),
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                        const Divider(height: 20),
+                        if (_selectedBranch == 'Semua' ||
+                            _selectedBranch == 'A')
+                          _buildBranchSchedule(
+                            'A',
+                            dateShifts
+                                .where((shift) => shift.branch == 'A')
+                                .toList(),
+                          ),
+                        if (_selectedBranch == 'Semua' ||
+                            _selectedBranch == 'B')
+                          _buildBranchSchedule(
+                            'B',
+                            dateShifts
+                                .where((shift) => shift.branch == 'B')
+                                .toList(),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _shiftService.dispose();
@@ -285,15 +492,52 @@ class _ShiftsPageState extends State<ShiftsPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddShiftDialog,
-        icon: const Icon(Icons.add),
-        label: const Text('Tambah Jadwal'),
-      ),
+      floatingActionButton: _isManager
+          ? FloatingActionButton.extended(
+              onPressed: _showAddShiftDialog,
+              icon: const Icon(Icons.add),
+              label: const Text('Tambah Jadwal'),
+            )
+          : null,
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: () => _changeWeek(-1),
+                  tooltip: 'Minggu sebelumnya',
+                  icon: const Icon(Icons.chevron_left),
+                ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Jadwal Mingguan',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        '${_formatDate(_weekStart)} – '
+                        '${_formatDate(
+                          _weekStart.add(const Duration(days: 6)),
+                        )}',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => _changeWeek(1),
+                  tooltip: 'Minggu berikutnya',
+                  icon: const Icon(Icons.chevron_right),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
             child: DropdownButtonFormField<String>(
               initialValue: _selectedBranch,
               decoration: const InputDecoration(
@@ -319,7 +563,6 @@ class _ShiftsPageState extends State<ShiftsPage> {
 
                 setState(() {
                   _selectedBranch = value;
-                  _loadShifts();
                 });
               },
             ),
@@ -346,48 +589,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
                   );
                 }
 
-                final shifts = snapshot.data ?? [];
-
-                if (shifts.isEmpty) {
-                  return RefreshIndicator(
-                    onRefresh: _refreshShifts,
-                    child: ListView(
-                      children: const [
-                        SizedBox(height: 150),
-                        Center(
-                          child: Text('Belum ada jadwal shift.'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: _refreshShifts,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 90),
-                    itemCount: shifts.length,
-                    itemBuilder: (context, index) {
-                      final shift = shifts[index];
-
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            child: Text(shift.branch),
-                          ),
-                          title: Text(shift.employeeName),
-                          subtitle: Text(
-                            '${shift.employeeCode} • ${shift.position}\n'
-                            '${shift.branchName}\n'
-                            '${shift.shiftDate} • ${shift.formattedTime}',
-                          ),
-                          isThreeLine: true,
-                        ),
-                      );
-                    },
-                  ),
-                );
+                return _buildWeeklySchedule(snapshot.data ?? []);
               },
             ),
           ),

@@ -11,12 +11,14 @@ class AppUser {
   final String fullName;
   final UserRole role;
   final bool isActive;
+  final String token;
 
   const AppUser({
     required this.id,
     required this.username,
     required this.fullName,
     required this.role,
+    required this.token,
     this.isActive = true,
   });
 
@@ -40,7 +42,10 @@ class AppUser {
         (item) => item.name == map['role'],
         orElse: () => UserRole.karyawan,
       ),
-      isActive: map['is_active'] as bool? ?? true,
+      isActive: map['is_active'] == true ||
+          map['is_active'] == 1 ||
+          map['is_active'] == '1',
+      token: map['token'] as String? ?? '',
     );
   }
 
@@ -51,6 +56,7 @@ class AppUser {
       'full_name': fullName,
       'role': role.name,
       'is_active': isActive,
+      'token': token,
     };
   }
 }

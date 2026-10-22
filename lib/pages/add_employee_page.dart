@@ -1,3 +1,4 @@
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
@@ -15,6 +16,8 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
 
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _shiftRateController = TextEditingController();
   final _hireDateController = TextEditingController();
 
@@ -22,11 +25,14 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
 
   String _position = 'Barista';
   bool _isLoading = false;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
     _fullNameController.dispose();
     _phoneController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
     _shiftRateController.dispose();
     _hireDateController.dispose();
     super.dispose();
@@ -45,7 +51,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
       confirmText: 'Pilih',
     );
 
-    if (selectedDate != null) {
+    if (selectedDate != null && mounted) {
       final year = selectedDate.year.toString().padLeft(4, '0');
       final month = selectedDate.month.toString().padLeft(2, '0');
       final day = selectedDate.day.toString().padLeft(2, '0');
@@ -67,7 +73,9 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
       _shiftRateController.text.trim().replaceAll(',', '.'),
     );
 
-    if (shiftRate == null || shiftRate < 0) {
+    if (shiftRate == null ||
+        !shiftRate.isFinite ||
+        shiftRate < 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Gaji per shift harus berupa angka yang valid.'),
@@ -85,6 +93,8 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
         fullName: _fullNameController.text.trim(),
         phone: _phoneController.text.trim(),
         position: _position,
+        username: _usernameController.text.trim(),
+        password: _passwordController.text,
         shiftRate: shiftRate,
         hireDate: _hireDateController.text.trim(),
       );
@@ -93,7 +103,9 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Karyawan berhasil ditambahkan.'),
+          content: Text(
+            'Karyawan dan akun login berhasil dibuat.',
+          ),
           backgroundColor: Colors.green,
         ),
       );
@@ -154,8 +166,9 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Isi informasi karyawan di bawah ini. '
-                    'Kode karyawan akan dibuat otomatis oleh sistem.',
+                    'Lengkapi data karyawan dan akun yang akan '
+                    'digunakan untuk login. Kode karyawan dibuat '
+                    'otomatis oleh sistem.',
                     style: TextStyle(
                       color: Colors.grey.shade700,
                       fontSize: 14,
@@ -163,46 +176,158 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Nama lengkap
+                  // Data pribadi
+                  _buildSectionTitle('Data Pribadi'),
+
                   _buildLabel('Nama Lengkap'),
                   TextFormField(
                     controller: _fullNameController,
                     textCapitalization: TextCapitalization.words,
+                    maxLength: 100,
                     decoration: _inputDecoration(
                       hint: 'Contoh: Andi Pratama',
                       icon: Icons.person_outline,
-                    ),
+                    ).copyWith(counterText: ''),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return 'Nama lengkap wajib diisi.';
                       }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 18),
-
-                  // Nomor telepon
-                  _buildLabel('Nomor Telepon'),
-                  TextFormField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: _inputDecoration(
-                      hint: 'Contoh: 081234567890',
-                      icon: Icons.phone_outlined,
-                    ),
-                    validator: (value) {
-                      if (value != null &&
-                          value.trim().isNotEmpty &&
-                          !RegExp(r'^[0-9+\-\s()]+$')
-                              .hasMatch(value.trim())) {
-                        return 'Format nomor telepon tidak valid.';
+                      if (value.trim().length > 100) {
+                        return 'Nama maksimal 100 karakter.';
                       }
                       return null;
                     },
                   ),
                   const SizedBox(height: 18),
 
-                  // Jabatan
+                  _buildLabel('Nomor Telepon'),
+                  TextFormField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    maxLength: 20,
+                    decoration: _inputDecoration(
+                      hint: 'Contoh: 081234567890',
+                      icon: Icons.phone_outlined,
+                    ).copyWith(counterText: ''),
+                    validator: (value) {
+                      final phone = value?.trim() ?? '';
+
+                      if (phone.isNotEmpty &&
+                          !RegExp(r'^[0-9+\-\s()]+$')
+                              .hasMatch(phone)) {
+                        return 'Format nomor telepon tidak valid.';
+                      }
+
+                      if (phone.length > 20) {
+                        return 'Nomor telepon maksimal 20 karakter.';
+                      }
+
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 18),
+
+                  // Akun login
+                  _buildSectionTitle('Akun Login'),
+
+                  _buildLabel('Username'),
+                  TextFormField(
+                    controller: _usernameController,
+                    keyboardType: TextInputType.text,
+                    textInputAction: TextInputAction.next,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    maxLength: 50,
+                    decoration: _inputDecoration(
+                      hint: 'Contoh: andi.barista',
+                      icon: Icons.account_circle_outlined,
+                    ).copyWith(counterText: ''),
+                    validator: (value) {
+                      final username = value?.trim() ?? '';
+
+                      if (username.isEmpty) {
+                        return 'Username wajib diisi.';
+                      }
+
+                      if (username.length < 3) {
+                        return 'Username minimal 3 karakter.';
+                      }
+
+                      if (username.length > 50) {
+                        return 'Username maksimal 50 karakter.';
+                      }
+
+                      if (!RegExp(
+                        r'^[a-zA-Z0-9._-]+$',
+                      ).hasMatch(username)) {
+                        return 'Gunakan huruf, angka, titik, '
+                            'garis bawah, atau tanda hubung.';
+                      }
+
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 18),
+
+                  _buildLabel('Password'),
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    textInputAction: TextInputAction.next,
+                    decoration: _inputDecoration(
+                      hint: 'Minimal 8 karakter',
+                      icon: Icons.lock_outline,
+                    ).copyWith(
+                      suffixIcon: IconButton(
+                        tooltip: _obscurePassword
+                            ? 'Tampilkan password'
+                            : 'Sembunyikan password',
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
+                    ),
+                    validator: (value) {
+                      final password = value ?? '';
+
+                      if (password.isEmpty) {
+                        return 'Password wajib diisi.';
+                      }
+
+                      if (password.length < 8) {
+                        return 'Password minimal 8 karakter.';
+                      }
+
+                      if (utf8.encode(password).length > 72) {
+                        return 'Password terlalu panjang.';
+                      }
+
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Simpan informasi login ini dengan aman dan '
+                    'berikan kepada karyawan yang bersangkutan.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Informasi pekerjaan
+                  _buildSectionTitle('Informasi Pekerjaan'),
+
                   _buildLabel('Jabatan'),
                   DropdownButtonFormField<String>(
                     initialValue: _position,
@@ -228,21 +353,23 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                         child: Text('Manager'),
                       ),
                     ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          _position = value;
-                        });
-                      }
-                    },
+                    onChanged: _isLoading
+                        ? null
+                        : (value) {
+                            if (value != null) {
+                              setState(() {
+                                _position = value;
+                              });
+                            }
+                          },
                   ),
                   const SizedBox(height: 18),
 
-                  // Gaji per shift
                   _buildLabel('Gaji per Shift (Rp)'),
                   TextFormField(
                     controller: _shiftRateController,
-                    keyboardType: const TextInputType.numberWithOptions(
+                    keyboardType:
+                        const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
                     decoration: _inputDecoration(
@@ -258,7 +385,9 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                         value.trim().replaceAll(',', '.'),
                       );
 
-                      if (amount == null || amount < 0) {
+                      if (amount == null ||
+                          !amount.isFinite ||
+                          amount < 0) {
                         return 'Masukkan nominal yang valid.';
                       }
 
@@ -267,7 +396,6 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                   ),
                   const SizedBox(height: 18),
 
-                  // Tanggal masuk
                   _buildLabel('Tanggal Masuk'),
                   TextFormField(
                     controller: _hireDateController,
@@ -278,7 +406,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                     ).copyWith(
                       suffixIcon: const Icon(Icons.date_range),
                     ),
-                    onTap: _selectHireDate,
+                    onTap: _isLoading ? null : _selectHireDate,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return 'Tanggal masuk wajib dipilih.';
@@ -288,7 +416,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                   ),
                   const SizedBox(height: 32),
 
-                  // Tombol simpan
+                  // Simpan
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -336,6 +464,20 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF6F4E37),
         ),
       ),
     );

@@ -14,6 +14,7 @@ class AuthService {
   }) async {
     final normalizedUsername = username.trim();
 
+    // Validasi input sebelum mengirim permintaan ke server.
     if (normalizedUsername.isEmpty || password.isEmpty) {
       throw const AuthException(
         'Username dan password wajib diisi.',
@@ -35,6 +36,7 @@ class AuthService {
           )
           .timeout(const Duration(seconds: 15));
 
+      // Pastikan respons server berupa JSON yang valid.
       final dynamic decoded = jsonDecode(response.body);
 
       if (decoded is! Map<String, dynamic>) {
@@ -43,12 +45,12 @@ class AuthService {
         );
       }
 
-      // Kredensial salah atau akun tidak aktif.
+      // Username/password salah atau akun tidak aktif.
       if (response.statusCode == 401) {
         return null;
       }
 
-      // Server menolak permintaan atau mengalami masalah.
+      // Tangani respons HTTP selain 200.
       if (response.statusCode != 200) {
         final message = decoded['message'];
 
@@ -59,18 +61,33 @@ class AuthService {
         );
       }
 
+      // Validasi struktur respons login.
       if (decoded['success'] != true ||
           decoded['data'] is! Map<String, dynamic>) {
-        throw const AuthException(
-          'Respons login tidak sesuai format.',
+        final message = decoded['message'];
+
+        throw AuthException(
+          message is String
+              ? message
+              : 'Respons login tidak sesuai format.',
         );
       }
 
+      // Ubah data JSON menjadi objek AppUser.
       final userData = decoded['data'] as Map<String, dynamic>;
       final user = AppUser.fromMap(userData);
 
+      // Jangan lanjutkan login jika akun tidak aktif.
       if (!user.isActive) {
         return null;
+      }
+
+      // Token wajib tersedia untuk mengakses API yang dilindungi.
+      if (user.token.trim().isEmpty) {
+        throw const AuthException(
+          'Token login tidak ditemukan dari server. '
+          'Periksa login.php.',
+        );
       }
 
       return user;
@@ -80,7 +97,8 @@ class AuthService {
       );
     } on http.ClientException {
       throw const AuthException(
-        'Tidak dapat terhubung ke server. Periksa koneksi dan URL API.',
+        'Tidak dapat terhubung ke server. '
+        'Periksa koneksi dan URL API.',
       );
     } on FormatException {
       throw const AuthException(

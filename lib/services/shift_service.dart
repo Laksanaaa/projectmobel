@@ -13,29 +13,12 @@ class ShiftService {
       : _client = client ?? http.Client();
 
   /// Mengambil jadwal shift.
-  ///
-  /// Parameter date dan branch bersifat opsional.
-  /// Contoh: getShifts(date: '2026-10-15', branch: 'A')
+  /// Filter tanggal dan cabang dilakukan di Flutter.
   Future<List<Shift>> getShifts({
     String? date,
     String? branch,
   }) async {
-    final queryParameters = <String, String>{};
-
-    if (date != null && date.isNotEmpty) {
-      queryParameters['date'] = date;
-    }
-
-    if (branch != null && branch.isNotEmpty) {
-      queryParameters['branch'] = branch;
-    }
-
-    final uri = Uri.parse(
-      '${ApiConfig.baseUrl}/shifts.php',
-    ).replace(
-      queryParameters:
-          queryParameters.isEmpty ? null : queryParameters,
-    );
+    final uri = Uri.parse('${ApiConfig.baseUrl}/shifts.php');
 
     final response = await _client
         .get(
@@ -61,20 +44,18 @@ class ShiftService {
       throw Exception('Format respons jadwal tidak valid.');
     }
 
-    final List<dynamic> data = result['data'];
-
-    return data
+    final shifts = (result['data'] as List)
         .map(
           (item) => Shift.fromMap(
             Map<String, dynamic>.from(item as Map),
           ),
         )
         .toList();
+
+    return shifts;
   }
 
   /// Menambahkan satu jadwal shift.
-  ///
-  /// Jam kerja ditentukan otomatis oleh API PHP berdasarkan cabang.
   Future<void> addShift({
     required int employeeId,
     required String branch,

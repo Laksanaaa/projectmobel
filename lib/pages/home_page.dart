@@ -5,6 +5,8 @@ import '../models/app_user.dart';
 import 'profile_page.dart';
 import 'employees_page.dart';
 import 'shifts_page.dart';
+import 'attendance_page.dart';
+import 'payroll_page.dart';
 
 class HomePage extends StatelessWidget {
   final AppUser user;
@@ -16,7 +18,7 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final menus = _getMenus(context, user.role);
+    final menus = _getMenus(context, user);
 
     return Scaffold(
       appBar: AppBar(
@@ -43,9 +45,7 @@ class HomePage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildWelcomeCard(),
-
               const SizedBox(height: 24),
-
               const Text(
                 'Dashboard',
                 style: TextStyle(
@@ -53,18 +53,12 @@ class HomePage extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 6),
-
               Text(
                 'Anda masuk sebagai ${user.roleName}.',
-                style: const TextStyle(
-                  color: Colors.black54,
-                ),
+                style: const TextStyle(color: Colors.black54),
               ),
-
               const SizedBox(height: 20),
-
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -88,9 +82,7 @@ class HomePage extends StatelessWidget {
                   );
                 },
               ),
-
               const SizedBox(height: 24),
-
               const Text(
                 'Café Management System',
                 style: TextStyle(
@@ -121,9 +113,7 @@ class HomePage extends StatelessWidget {
             color: Colors.white,
             size: 36,
           ),
-
           const SizedBox(height: 16),
-
           Text(
             'Halo, ${user.fullName}!',
             style: const TextStyle(
@@ -132,9 +122,7 @@ class HomePage extends StatelessWidget {
               color: Colors.white,
             ),
           ),
-
           const SizedBox(height: 8),
-
           Text(
             'Selamat datang di sistem manajemen café.',
             style: TextStyle(
@@ -142,9 +130,7 @@ class HomePage extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.9),
             ),
           ),
-
           const SizedBox(height: 14),
-
           Container(
             padding: const EdgeInsets.symmetric(
               horizontal: 12,
@@ -179,9 +165,7 @@ class HomePage extends StatelessWidget {
       color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(
-          color: Color(0xFFE9E1D8),
-        ),
+        side: const BorderSide(color: Color(0xFFE9E1D8)),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -205,9 +189,7 @@ class HomePage extends StatelessWidget {
                 size: 36,
                 color: const Color(0xFF6F4E37),
               ),
-
               const SizedBox(height: 12),
-
               Text(
                 title,
                 textAlign: TextAlign.center,
@@ -216,9 +198,7 @@ class HomePage extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 6),
-
               Text(
                 description,
                 textAlign: TextAlign.center,
@@ -236,8 +216,69 @@ class HomePage extends StatelessWidget {
 
   List<_DashboardMenu> _getMenus(
     BuildContext context,
-    UserRole role,
+    AppUser user,
   ) {
+    final role = user.role;
+
+    final attendanceMenu = _DashboardMenu(
+      title: 'Absensi',
+      icon: Icons.fingerprint,
+      description: role == UserRole.manager
+          ? 'Pantau kehadiran'
+          : 'Check-in, check-out, dan riwayat',
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => AttendancePage(user: user),
+          ),
+        );
+      },
+    );
+
+    final shiftMenu = _DashboardMenu(
+      title: 'Jadwal Shift',
+      icon: Icons.calendar_month_outlined,
+      description: role == UserRole.manager
+          ? 'Atur jadwal kerja'
+          : role == UserRole.akuntan
+              ? 'Lihat jadwal kerja'
+              : 'Lihat jadwal pribadi',
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => ShiftsPage(user: user),
+          ),
+        );
+      },
+    );
+
+    // Menu ini sekarang aktif untuk ketiga role.
+    final payrollMenu = _DashboardMenu(
+      title: 'Penggajian',
+      icon: Icons.payments_outlined,
+      description: role == UserRole.manager
+          ? 'Kelola gaji karyawan'
+          : role == UserRole.akuntan
+              ? 'Periksa perhitungan gaji'
+              : 'Lihat informasi gaji',
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => PayrollPage(user: user),
+          ),
+        );
+      },
+    );
+
+    final miniGame = _DashboardMenu(
+      title: 'Mini Game',
+      icon: Icons.sports_esports_outlined,
+      description: 'Permainan santai',
+    );
+
     switch (role) {
       case UserRole.manager:
         return [
@@ -254,104 +295,51 @@ class HomePage extends StatelessWidget {
               );
             },
           ),
-
-          _DashboardMenu(
-            title: 'Jadwal Shift',
-            icon: Icons.calendar_month_outlined,
-            description: 'Atur jadwal kerja',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute<void>(
-                  builder: (_) => const ShiftsPage(),
-                ),
-              );
-            },
-          ),
-
-          const _DashboardMenu(
-            title: 'Absensi',
-            icon: Icons.fingerprint,
-            description: 'Pantau kehadiran',
-          ),
-
-          const _DashboardMenu(
-            title: 'Penggajian',
-            icon: Icons.payments_outlined,
-            description: 'Kelola gaji karyawan',
-          ),
-
+          shiftMenu,
+          attendanceMenu,
+          payrollMenu,
           const _DashboardMenu(
             title: 'Keuangan',
             icon: Icons.account_balance_wallet_outlined,
             description: 'Pantau keuangan café',
           ),
-
-          const _DashboardMenu(
-            title: 'Inventaris',
-            icon: Icons.inventory_2_outlined,
-            description: 'Kelola persediaan',
-          ),
-
           const _DashboardMenu(
             title: 'Menu Café',
             icon: Icons.local_cafe_outlined,
             description: 'Kelola menu dan harga',
           ),
-
           const _DashboardMenu(
             title: 'Laporan',
             icon: Icons.bar_chart_outlined,
             description: 'Lihat laporan operasional',
           ),
+          miniGame,
         ];
 
       case UserRole.akuntan:
-        return const [
-          _DashboardMenu(
+        return [
+          attendanceMenu,
+          shiftMenu,
+          const _DashboardMenu(
             title: 'Keuangan',
             icon: Icons.account_balance_wallet_outlined,
             description: 'Catat transaksi keuangan',
           ),
-
-          _DashboardMenu(
-            title: 'Penggajian',
-            icon: Icons.payments_outlined,
-            description: 'Periksa perhitungan gaji',
-          ),
-
-          _DashboardMenu(
+          payrollMenu,
+          const _DashboardMenu(
             title: 'Laporan',
             icon: Icons.bar_chart_outlined,
-            description: 'Lihat laporan keuangan',
+            description: 'Lihat laporan operasional',
           ),
-
-          _DashboardMenu(
-            title: 'Inventaris',
-            icon: Icons.inventory_2_outlined,
-            description: 'Pantau nilai persediaan',
-          ),
+          miniGame,
         ];
 
       case UserRole.karyawan:
-        return const [
-          _DashboardMenu(
-            title: 'Absensi',
-            icon: Icons.fingerprint,
-            description: 'Catat kehadiran',
-          ),
-
-          _DashboardMenu(
-            title: 'Jadwal Shift',
-            icon: Icons.calendar_month_outlined,
-            description: 'Lihat jadwal pribadi',
-          ),
-
-          _DashboardMenu(
-            title: 'Penggajian',
-            icon: Icons.payments_outlined,
-            description: 'Lihat informasi gaji',
-          ),
+        return [
+          attendanceMenu,
+          shiftMenu,
+          payrollMenu,
+          miniGame,
         ];
     }
   }

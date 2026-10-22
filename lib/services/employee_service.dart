@@ -41,11 +41,13 @@ class EmployeeService {
         .toList();
   }
 
-  // Menambahkan karyawan baru melalui PHP API.
+  // Menambahkan karyawan sekaligus membuat akun login.
   Future<void> addEmployee({
     required String fullName,
     required String phone,
     required String position,
+    required String username,
+    required String password,
     required double shiftRate,
     required String hireDate,
   }) async {
@@ -60,6 +62,8 @@ class EmployeeService {
             'full_name': fullName.trim(),
             'phone': phone.trim(),
             'position': position,
+            'username': username.trim(),
+            'password': password,
             'shift_rate': shiftRate,
             'hire_date': hireDate,
           }),
