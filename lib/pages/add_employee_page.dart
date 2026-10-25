@@ -49,6 +49,18 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
       helpText: 'Pilih tanggal masuk karyawan',
       cancelText: 'Batal',
       confirmText: 'Pilih',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF8C5E3C),
+              onPrimary: Colors.white,
+              onSurface: Colors.black87,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (selectedDate != null && mounted) {
@@ -73,12 +85,12 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
       _shiftRateController.text.trim().replaceAll(',', '.'),
     );
 
-    if (shiftRate == null ||
-        !shiftRate.isFinite ||
-        shiftRate < 0) {
+    if (shiftRate == null || !shiftRate.isFinite || shiftRate < 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Gaji per shift harus berupa angka yang valid.'),
+        SnackBar(
+          content: const Text('Gaji per shift harus berupa angka yang valid.'),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
@@ -103,10 +115,9 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Karyawan dan akun login berhasil dibuat.',
-          ),
+          content: Text('Karyawan dan akun login berhasil dibuat.'),
           backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
         ),
       );
 
@@ -116,10 +127,9 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
-          ),
-          backgroundColor: Colors.red,
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     } finally {
@@ -133,13 +143,31 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color(0xFF6F4E37);
+    const lightBg = Color(0xFFFAFAFA);
+    const primaryBrown = Color(0xFF8C5E3C);
 
     return Scaffold(
+      backgroundColor: lightBg,
       appBar: AppBar(
-        title: const Text('Tambah Karyawan'),
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
+        backgroundColor: lightBg,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.black87,
+            size: 20,
+          ),
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        title: const Text(
+          'Tambah Karyawan',
+          style: TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
       ),
       body: Center(
         child: ConstrainedBox(
@@ -151,34 +179,41 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.person_add_alt_1,
-                    size: 48,
-                    color: primaryColor,
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Data Karyawan Baru',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Lengkapi data karyawan dan akun yang akan '
-                    'digunakan untuk login. Kode karyawan dibuat '
-                    'otomatis oleh sistem.',
-                    style: TextStyle(
-                      color: Colors.grey.shade700,
-                      fontSize: 14,
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF9F5F2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.person_add_rounded,
+                        size: 42,
+                        color: primaryBrown,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),
+                  const Text(
+                    'Data Karyawan Baru',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Lengkapi data karyawan dan akun yang akan digunakan untuk login. Kode karyawan dibuat otomatis oleh sistem.',
+                    style: TextStyle(
+                      color: Colors.black54,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
 
-                  // Data pribadi
                   _buildSectionTitle('Data Pribadi'),
-
                   _buildLabel('Nama Lengkap'),
                   TextFormField(
                     controller: _fullNameController,
@@ -186,19 +221,17 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                     maxLength: 100,
                     decoration: _inputDecoration(
                       hint: 'Contoh: Andi Pratama',
-                      icon: Icons.person_outline,
+                      icon: Icons.person_outline_rounded,
                     ).copyWith(counterText: ''),
                     validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
+                      if (value == null || value.trim().isEmpty)
                         return 'Nama lengkap wajib diisi.';
-                      }
-                      if (value.trim().length > 100) {
+                      if (value.trim().length > 100)
                         return 'Nama maksimal 100 karakter.';
-                      }
                       return null;
                     },
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 16),
 
                   _buildLabel('Nomor Telepon'),
                   TextFormField(
@@ -211,25 +244,18 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                     ).copyWith(counterText: ''),
                     validator: (value) {
                       final phone = value?.trim() ?? '';
-
                       if (phone.isNotEmpty &&
-                          !RegExp(r'^[0-9+\-\s()]+$')
-                              .hasMatch(phone)) {
+                          !RegExp(r'^[0-9+\-\s()]+$').hasMatch(phone)) {
                         return 'Format nomor telepon tidak valid.';
                       }
-
-                      if (phone.length > 20) {
+                      if (phone.length > 20)
                         return 'Nomor telepon maksimal 20 karakter.';
-                      }
-
                       return null;
                     },
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 28),
 
-                  // Akun login
                   _buildSectionTitle('Akun Login'),
-
                   _buildLabel('Username'),
                   TextFormField(
                     controller: _usernameController,
@@ -244,30 +270,18 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                     ).copyWith(counterText: ''),
                     validator: (value) {
                       final username = value?.trim() ?? '';
-
-                      if (username.isEmpty) {
-                        return 'Username wajib diisi.';
-                      }
-
-                      if (username.length < 3) {
+                      if (username.isEmpty) return 'Username wajib diisi.';
+                      if (username.length < 3)
                         return 'Username minimal 3 karakter.';
-                      }
-
-                      if (username.length > 50) {
+                      if (username.length > 50)
                         return 'Username maksimal 50 karakter.';
+                      if (!RegExp(r'^[a-zA-Z0-9._-]+$').hasMatch(username)) {
+                        return 'Gunakan huruf, angka, titik, garis bawah, atau tanda hubung.';
                       }
-
-                      if (!RegExp(
-                        r'^[a-zA-Z0-9._-]+$',
-                      ).hasMatch(username)) {
-                        return 'Gunakan huruf, angka, titik, '
-                            'garis bawah, atau tanda hubung.';
-                      }
-
                       return null;
                     },
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 16),
 
                   _buildLabel('Password'),
                   TextFormField(
@@ -276,74 +290,61 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                     autocorrect: false,
                     enableSuggestions: false,
                     textInputAction: TextInputAction.next,
-                    decoration: _inputDecoration(
-                      hint: 'Minimal 8 karakter',
-                      icon: Icons.lock_outline,
-                    ).copyWith(
-                      suffixIcon: IconButton(
-                        tooltip: _obscurePassword
-                            ? 'Tampilkan password'
-                            : 'Sembunyikan password',
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
+                    decoration:
+                        _inputDecoration(
+                          hint: 'Minimal 8 karakter',
+                          icon: Icons.lock_outline_rounded,
+                        ).copyWith(
+                          suffixIcon: IconButton(
+                            tooltip: _obscurePassword
+                                ? 'Tampilkan password'
+                                : 'Sembunyikan password',
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                              color: Colors.black45,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                    ),
                     validator: (value) {
                       final password = value ?? '';
-
-                      if (password.isEmpty) {
-                        return 'Password wajib diisi.';
-                      }
-
-                      if (password.length < 8) {
+                      if (password.isEmpty) return 'Password wajib diisi.';
+                      if (password.length < 8)
                         return 'Password minimal 8 karakter.';
-                      }
-
-                      if (utf8.encode(password).length > 72) {
+                      if (utf8.encode(password).length > 72)
                         return 'Password terlalu panjang.';
-                      }
-
                       return null;
                     },
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Simpan informasi login ini dengan aman dan '
-                    'berikan kepada karyawan yang bersangkutan.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade700,
-                    ),
+                  const Text(
+                    'Simpan informasi login ini dengan aman dan berikan kepada karyawan yang bersangkutan.',
+                    style: TextStyle(fontSize: 11, color: Colors.black45),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
 
-                  // Informasi pekerjaan
                   _buildSectionTitle('Informasi Pekerjaan'),
-
                   _buildLabel('Jabatan'),
                   DropdownButtonFormField<String>(
                     initialValue: _position,
                     decoration: _inputDecoration(
                       hint: 'Pilih jabatan',
-                      icon: Icons.work_outline,
+                      icon: Icons.work_outline_rounded,
                     ),
+                    dropdownColor: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
                     items: const [
                       DropdownMenuItem(
                         value: 'Barista',
                         child: Text('Barista'),
                       ),
-                      DropdownMenuItem(
-                        value: 'Kasir',
-                        child: Text('Kasir'),
-                      ),
+                      DropdownMenuItem(value: 'Kasir', child: Text('Kasir')),
                       DropdownMenuItem(
                         value: 'Supervisor',
                         child: Text('Supervisor'),
@@ -363,13 +364,12 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                             }
                           },
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 16),
 
                   _buildLabel('Gaji per Shift (Rp)'),
                   TextFormField(
                     controller: _shiftRateController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(
+                    keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
                     decoration: _inputDecoration(
@@ -377,49 +377,45 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                       icon: Icons.payments_outlined,
                     ),
                     validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
+                      if (value == null || value.trim().isEmpty)
                         return 'Gaji per shift wajib diisi.';
-                      }
-
                       final amount = double.tryParse(
                         value.trim().replaceAll(',', '.'),
                       );
-
-                      if (amount == null ||
-                          !amount.isFinite ||
-                          amount < 0) {
+                      if (amount == null || !amount.isFinite || amount < 0) {
                         return 'Masukkan nominal yang valid.';
                       }
-
                       return null;
                     },
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 16),
 
                   _buildLabel('Tanggal Masuk'),
                   TextFormField(
                     controller: _hireDateController,
                     readOnly: true,
-                    decoration: _inputDecoration(
-                      hint: 'Pilih tanggal masuk',
-                      icon: Icons.calendar_month_outlined,
-                    ).copyWith(
-                      suffixIcon: const Icon(Icons.date_range),
-                    ),
+                    decoration:
+                        _inputDecoration(
+                          hint: 'Pilih tanggal masuk',
+                          icon: Icons.calendar_month_outlined,
+                        ).copyWith(
+                          suffixIcon: const Icon(
+                            Icons.date_range_rounded,
+                            color: Colors.black45,
+                          ),
+                        ),
                     onTap: _isLoading ? null : _selectHireDate,
                     validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
+                      if (value == null || value.trim().isEmpty)
                         return 'Tanggal masuk wajib dipilih.';
-                      }
                       return null;
                     },
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 40),
 
-                  // Simpan
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 52,
                     child: ElevatedButton.icon(
                       onPressed: _isLoading ? null : _saveEmployee,
                       icon: _isLoading
@@ -431,35 +427,51 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Icon(Icons.save_outlined),
+                          : const Icon(Icons.save_rounded),
                       label: Text(
-                        _isLoading
-                            ? 'Menyimpan...'
-                            : 'Simpan Karyawan',
+                        _isLoading ? 'Menyimpan...' : 'Simpan Karyawan',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
+                        backgroundColor: primaryBrown,
                         foregroundColor: Colors.white,
-                        disabledBackgroundColor:
-                            primaryColor.withValues(alpha: 0.6),
+                        elevation: 0,
+                        disabledBackgroundColor: primaryBrown.withValues(
+                          alpha: 0.6,
+                        ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(20),
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 12),
-
                   SizedBox(
                     width: double.infinity,
-                    height: 48,
+                    height: 52,
                     child: OutlinedButton(
                       onPressed: _isLoading
                           ? null
                           : () => Navigator.pop(context, false),
-                      child: const Text('Batal'),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFEFE8E1)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: const Text(
+                        'Batal',
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
@@ -475,9 +487,9 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
       child: Text(
         title,
         style: const TextStyle(
-          fontSize: 18,
+          fontSize: 16,
           fontWeight: FontWeight.bold,
-          color: Color(0xFF6F4E37),
+          color: Color(0xFF8C5E3C),
         ),
       ),
     );
@@ -490,7 +502,8 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
         label,
         style: const TextStyle(
           fontWeight: FontWeight.w600,
-          fontSize: 14,
+          fontSize: 13,
+          color: Colors.black87,
         ),
       ),
     );
@@ -502,25 +515,27 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
   }) {
     return InputDecoration(
       hintText: hint,
-      prefixIcon: Icon(icon),
+      hintStyle: const TextStyle(color: Colors.black38, fontSize: 14),
+      prefixIcon: Icon(icon, color: Colors.black45, size: 22),
+      filled: true,
+      fillColor: Colors.white,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFFEFE8E1)),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(
-          color: Color(0xFF6F4E37),
-          width: 1.5,
-        ),
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFF8C5E3C), width: 1.5),
       ),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 14,
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.red.shade300),
       ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     );
   }
 }

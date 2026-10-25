@@ -1,5 +1,5 @@
-
 import 'package:flutter/material.dart';
+
 import '../services/auth_service.dart';
 import 'home_page.dart';
 
@@ -29,66 +29,68 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  
-Future<void> _login() async {
-  if (!_formKey.currentState!.validate()) {
-    return;
-  }
-
-  setState(() {
-    _isLoading = true;
-    _errorMessage = null;
-  });
-
-  try {
-    final user = await _authService.login(
-      username: _usernameController.text,
-      password: _passwordController.text,
-    );
-
-    if (!mounted) return;
-
-    if (user == null) {
-      setState(() {
-        _errorMessage = 'Username atau password salah.';
-      });
+  Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => HomePage(user: user),
-      ),
-    );
-  } on AuthException catch (e) {
-    if (!mounted) return;
-
     setState(() {
-      _errorMessage = e.message;
+      _isLoading = true;
+      _errorMessage = null;
     });
-  } catch (_) {
-    if (!mounted) return;
 
-    setState(() {
-      _errorMessage = 'Terjadi kesalahan. Silakan coba lagi.';
-    });
-  } finally {
-    if (mounted) {
+    try {
+      final user = await _authService.login(
+        username: _usernameController.text,
+        password: _passwordController.text,
+      );
+
+      if (!mounted) return;
+
+      if (user == null) {
+        setState(() {
+          _errorMessage = 'Username atau password salah.';
+        });
+        return;
+      }
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomePage(user: user)),
+      );
+    } on AuthException catch (e) {
+      if (!mounted) return;
+
       setState(() {
-        _isLoading = false;
+        _errorMessage = e.message;
       });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _errorMessage = 'Terjadi kesalahan. Silakan coba lagi.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
+    const primaryBrown = Color(0xFF6F4E37);
+    const lightBg = Color(0xFFFAFAFA);
+    const inputFill = Color(0xFFF5F5F5);
+
     return Scaffold(
+      backgroundColor: lightBg,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
             child: Form(
               key: _formKey,
               child: Column(
@@ -97,170 +99,174 @@ Future<void> _login() async {
                   const Icon(
                     Icons.coffee_rounded,
                     size: 80,
-                    color: Color(0xFF6F4E37),
+                    color: primaryBrown,
                   ),
-
                   const SizedBox(height: 16),
-
                   const Text(
-                    'CAFÉ MANAGEMENT',
+                    'Cafe Shop',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 25,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF6F4E37),
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black87,
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
                   const Text(
-                    'Sistem Manajemen Operasional Café',
+                    'Management System\nFind the best coffee for you',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.black54,
+                      height: 1.4,
                     ),
                   ),
-
-                  const SizedBox(height: 40),
-
+                  const SizedBox(height: 48),
                   const Text(
-                    'Selamat Datang!',
+                    'Welcome back!',
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
                   const Text(
-                    'Silakan masuk menggunakan akun Anda.',
+                    'Please login to your account.',
                     style: TextStyle(color: Colors.black54),
                   ),
-
                   const SizedBox(height: 28),
-
                   TextFormField(
                     controller: _usernameController,
                     textInputAction: TextInputAction.next,
                     autocorrect: false,
                     decoration: InputDecoration(
-                      labelText: 'Username',
-                      hintText: 'Masukkan username',
+                      hintText: 'Username',
+                      hintStyle: const TextStyle(color: Colors.black38),
                       prefixIcon: const Icon(
                         Icons.person_outline,
+                        color: Colors.black45,
                       ),
+                      filled: true,
+                      fillColor: inputFill,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 20),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: const BorderSide(
+                          color: primaryBrown,
+                          width: 1.5,
+                        ),
                       ),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return 'Username wajib diisi';
                       }
-
                       return null;
                     },
                   ),
-
-                  const SizedBox(height: 18),
-
+                  const SizedBox(height: 16),
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) {
-                      if (!_isLoading) {
-                        _login();
-                      }
+                      if (!_isLoading) _login();
                     },
                     decoration: InputDecoration(
-                      labelText: 'Password',
-                      hintText: 'Masukkan password',
+                      hintText: 'Password',
+                      hintStyle: const TextStyle(color: Colors.black38),
                       prefixIcon: const Icon(
                         Icons.lock_outline,
+                        color: Colors.black45,
                       ),
-                      suffixIcon: IconButton(
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
+                      filled: true,
+                      fillColor: inputFill,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 20),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: const BorderSide(
+                          color: primaryBrown,
+                          width: 1.5,
                         ),
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                      suffixIcon: Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: IconButton(
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            color: Colors.black45,
+                          ),
+                        ),
                       ),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Password wajib diisi';
                       }
-
                       return null;
                     },
                   ),
-
                   if (_errorMessage != null) ...[
                     const SizedBox(height: 16),
                     Text(
                       _errorMessage!,
                       style: const TextStyle(
-                        color: Colors.red,
+                        color: Colors.redAccent,
                         fontSize: 13,
+                        fontWeight: FontWeight.w500,
                       ),
                       textAlign: TextAlign.center,
                     ),
                   ],
-
-                  const SizedBox(height: 28),
-
+                  const SizedBox(height: 32),
                   SizedBox(
-                    height: 52,
+                    height: 56,
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _login,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6F4E37),
+                        backgroundColor: primaryBrown,
                         foregroundColor: Colors.white,
-                        disabledBackgroundColor:
-                            const Color(0xFFB8A494),
+                        disabledBackgroundColor: primaryBrown.withValues(
+                          alpha: 0.6,
+                        ),
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(30),
                         ),
                       ),
                       child: _isLoading
                           ? const SizedBox(
-                              height: 22,
-                              width: 22,
+                              height: 24,
+                              width: 24,
                               child: CircularProgressIndicator(
-                                strokeWidth: 2,
+                                strokeWidth: 2.5,
                                 color: Colors.white,
                               ),
                             )
                           : const Text(
-                              'MASUK',
+                              'Login',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
                               ),
                             ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 28),
-
-                  const Text(
-                    'Café Management System © 2026',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.black45,
                     ),
                   ),
                 ],

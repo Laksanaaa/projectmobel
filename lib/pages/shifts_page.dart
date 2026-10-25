@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import '../models/app_user.dart';
@@ -10,10 +9,7 @@ import '../services/shift_service.dart';
 class ShiftsPage extends StatefulWidget {
   final AppUser user;
 
-  const ShiftsPage({
-    super.key,
-    required this.user,
-  });
+  const ShiftsPage({super.key, required this.user});
 
   @override
   State<ShiftsPage> createState() => _ShiftsPageState();
@@ -57,7 +53,6 @@ class _ShiftsPageState extends State<ShiftsPage> {
       'Sabtu',
       'Minggu',
     ];
-
     return days[weekday - 1];
   }
 
@@ -78,14 +73,11 @@ class _ShiftsPageState extends State<ShiftsPage> {
 
   void _changeWeek(int numberOfWeeks) {
     setState(() {
-      _weekStart = _weekStart.add(
-        Duration(days: 7 * numberOfWeeks),
-      );
+      _weekStart = _weekStart.add(Duration(days: 7 * numberOfWeeks));
     });
   }
 
   Future<void> _showAddShiftDialog() async {
-    // Pemeriksaan role sebelum membuka dialog.
     if (!_isManager) return;
 
     List<Employee> employees;
@@ -95,12 +87,9 @@ class _ShiftsPageState extends State<ShiftsPage> {
       employees = employees.where((e) => e.isActive).toList();
     } catch (e) {
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal mengambil karyawan: $e'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal mengambil karyawan: $e')));
       return;
     }
 
@@ -109,9 +98,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
     if (employees.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Belum ada karyawan aktif. Tambahkan karyawan dahulu.',
-          ),
+          content: Text('Belum ada karyawan aktif. Tambahkan karyawan dahulu.'),
         ),
       );
       return;
@@ -125,31 +112,59 @@ class _ShiftsPageState extends State<ShiftsPage> {
       context: context,
       builder: (dialogContext) {
         bool isSaving = false;
+        const primaryBrown = Color(0xFF8C5E3C);
 
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Tambah Jadwal Shift'),
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              title: const Text(
+                'Tambah Jadwal Shift',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Pilih Karyawan'),
+                    const Text(
+                      'Pilih Karyawan',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<int>(
                       initialValue: selectedEmployeeId,
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFEFE8E1),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFEFE8E1),
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                       ),
                       hint: const Text('Pilih karyawan'),
                       items: employees.map((employee) {
                         return DropdownMenuItem<int>(
                           value: employee.id,
                           child: Text(
-                            '${employee.employeeCode} - '
-                            '${employee.fullName}',
+                            '${employee.employeeCode} - ${employee.fullName}',
                             overflow: TextOverflow.ellipsis,
                           ),
                         );
@@ -163,12 +178,33 @@ class _ShiftsPageState extends State<ShiftsPage> {
                             },
                     ),
                     const SizedBox(height: 16),
-                    const Text('Pilih Cabang'),
+                    const Text(
+                      'Pilih Cabang',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       initialValue: selectedBranch,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFEFE8E1),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFEFE8E1),
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                       ),
                       items: const [
                         DropdownMenuItem(
@@ -191,32 +227,65 @@ class _ShiftsPageState extends State<ShiftsPage> {
                             },
                     ),
                     const SizedBox(height: 16),
-                    const Text('Tanggal Shift'),
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.calendar_month),
-                      label: Text(_formatDate(selectedDate)),
-                      onPressed: isSaving
-                          ? null
-                          : () async {
-                              final picked = await showDatePicker(
-                                context: context,
-                                initialDate: selectedDate,
-                                firstDate: DateTime(2025),
-                                lastDate: DateTime(2035),
-                              );
-
-                              if (picked != null) {
-                                setDialogState(() {
-                                  selectedDate = picked;
-                                });
-                              }
-                            },
+                    const Text(
+                      'Tanggal Shift',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
                     ),
                     const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(
+                          Icons.calendar_month_rounded,
+                          color: primaryBrown,
+                        ),
+                        label: Text(
+                          _formatDate(selectedDate),
+                          style: const TextStyle(color: Colors.black87),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: const BorderSide(color: Color(0xFFEFE8E1)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: isSaving
+                            ? null
+                            : () async {
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: selectedDate,
+                                  firstDate: DateTime(2025),
+                                  lastDate: DateTime(2035),
+                                  builder: (context, child) {
+                                    return Theme(
+                                      data: Theme.of(context).copyWith(
+                                        colorScheme: const ColorScheme.light(
+                                          primary: primaryBrown,
+                                          onPrimary: Colors.white,
+                                          onSurface: Colors.black87,
+                                        ),
+                                      ),
+                                      child: child!,
+                                    );
+                                  },
+                                );
+                                if (picked != null) {
+                                  setDialogState(() {
+                                    selectedDate = picked;
+                                  });
+                                }
+                              },
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     const Text(
                       'Jam kerja ditentukan otomatis berdasarkan cabang.',
-                      style: TextStyle(fontSize: 12),
+                      style: TextStyle(fontSize: 11, color: Colors.black45),
                     ),
                   ],
                 ),
@@ -226,9 +295,12 @@ class _ShiftsPageState extends State<ShiftsPage> {
                   onPressed: isSaving
                       ? null
                       : () => Navigator.pop(dialogContext, false),
-                  child: const Text('Batal'),
+                  child: const Text(
+                    'Batal',
+                    style: TextStyle(color: Colors.black54),
+                  ),
                 ),
-                FilledButton(
+                ElevatedButton(
                   onPressed: isSaving
                       ? null
                       : () async {
@@ -242,48 +314,43 @@ class _ShiftsPageState extends State<ShiftsPage> {
                             );
                             return;
                           }
-
                           final date = _dateKey(selectedDate);
-
-                          setDialogState(() {
-                            isSaving = true;
-                          });
-
+                          setDialogState(() => isSaving = true);
                           try {
                             await _shiftService.addShift(
                               employeeId: selectedEmployeeId!,
                               branch: selectedBranch,
                               shiftDate: date,
                             );
-
-                            if (dialogContext.mounted) {
+                            if (dialogContext.mounted)
                               Navigator.pop(dialogContext, true);
-                            }
                           } catch (e) {
                             if (!dialogContext.mounted) return;
-
-                            setDialogState(() {
-                              isSaving = false;
-                            });
-
+                            setDialogState(() => isSaving = false);
                             ScaffoldMessenger.of(dialogContext).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  e.toString().replaceFirst(
-                                    'Exception: ',
-                                    '',
-                                  ),
+                                  e.toString().replaceFirst('Exception: ', ''),
                                 ),
                               ),
                             );
                           }
                         },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryBrown,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                   child: isSaving
                       ? const SizedBox(
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
+                            color: Colors.white,
                           ),
                         )
                       : const Text('Simpan'),
@@ -297,75 +364,103 @@ class _ShiftsPageState extends State<ShiftsPage> {
 
     if (result == true && mounted) {
       setState(_loadShifts);
-
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Jadwal shift berhasil ditambahkan.'),
-        ),
+        const SnackBar(content: Text('Jadwal shift berhasil ditambahkan.')),
       );
     }
   }
 
-  Widget _buildBranchSchedule(
-    String branch,
-    List<Shift> shifts,
-  ) {
+  Widget _buildBranchSchedule(String branch, List<Shift> shifts) {
     final branchName = branch == 'A' ? 'Cabang A' : 'Cabang B';
-    final shiftTime =
-        branch == 'A' ? '18.00–01.00' : '19.30–03.30';
+    final shiftTime = branch == 'A' ? '18.00–01.00' : '19.30–03.30';
+    const primaryBrown = Color(0xFF8C5E3C);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context)
-              .colorScheme
-              .surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(10),
+          color: const Color(0xFFF9F5F2),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFEFE8E1)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  radius: 17,
-                  child: Text(branch),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    branch,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: primaryBrown,
+                      fontSize: 13,
+                    ),
+                  ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     branchName,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                      fontSize: 14,
                     ),
                   ),
                 ),
                 Text(
                   shiftTime,
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             if (shifts.isEmpty)
               const Text(
                 'Belum ada karyawan yang dijadwalkan.',
-                style: TextStyle(fontSize: 13),
+                style: TextStyle(fontSize: 12, color: Colors.black45),
               )
             else
               Wrap(
-                spacing: 6,
-                runSpacing: 6,
+                spacing: 8,
+                runSpacing: 8,
                 children: shifts.map((shift) {
-                  return Chip(
-                    avatar: const Icon(
-                      Icons.person_outline,
-                      size: 18,
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
                     ),
-                    label: Text(shift.employeeName),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFEFE8E1)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.person_outline_rounded,
+                          size: 14,
+                          color: primaryBrown,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          shift.employeeName,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 }).toList(),
               ),
@@ -380,49 +475,61 @@ class _ShiftsPageState extends State<ShiftsPage> {
       7,
       (index) => _weekStart.add(Duration(days: index)),
     );
-
     final weekEnd = _weekStart.add(const Duration(days: 7));
 
     final weekShifts = allShifts.where((shift) {
       final date = DateTime.tryParse(shift.shiftDate);
       if (date == null) return false;
-
       final normalizedDate = DateTime(date.year, date.month, date.day);
-
-      final sameWeek = !normalizedDate.isBefore(_weekStart) &&
+      final sameWeek =
+          !normalizedDate.isBefore(_weekStart) &&
           normalizedDate.isBefore(weekEnd);
-
-      final sameBranch = _selectedBranch == 'Semua' ||
-          shift.branch == _selectedBranch;
-
+      final sameBranch =
+          _selectedBranch == 'Semua' || shift.branch == _selectedBranch;
       return sameWeek && sameBranch;
     }).toList();
 
     return RefreshIndicator(
+      color: const Color(0xFF8C5E3C),
       onRefresh: _refreshShifts,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 90),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 90),
         children: [
           if (weekShifts.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text(
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 24),
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
                 'Belum ada jadwal shift pada minggu ini.',
                 textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.black54),
               ),
             ),
           for (final date in weekDates)
             Builder(
               builder: (context) {
-                final dateShifts = weekShifts.where((shift) {
-                  return shift.shiftDate == _dateKey(date);
-                }).toList();
-
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  clipBehavior: Clip.antiAlias,
+                final dateShifts = weekShifts
+                    .where((shift) => shift.shiftDate == _dateKey(date))
+                    .toList();
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
                   child: Padding(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -431,21 +538,25 @@ class _ShiftsPageState extends State<ShiftsPage> {
                             Expanded(
                               child: Text(
                                 _dayName(date.weekday),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.black87,
+                                ),
                               ),
                             ),
                             Text(
                               _formatDate(date),
-                              style: Theme.of(context).textTheme.bodySmall,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.black54,
+                              ),
                             ),
                           ],
                         ),
-                        const Divider(height: 20),
+                        const SizedBox(height: 12),
+                        const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                        const SizedBox(height: 16),
                         if (_selectedBranch == 'Semua' ||
                             _selectedBranch == 'A')
                           _buildBranchSchedule(
@@ -481,13 +592,35 @@ class _ShiftsPageState extends State<ShiftsPage> {
 
   @override
   Widget build(BuildContext context) {
+    const lightBg = Color(0xFFFAFAFA);
+    const primaryBrown = Color(0xFF8C5E3C);
+
     return Scaffold(
+      backgroundColor: lightBg,
       appBar: AppBar(
-        title: const Text('Jadwal Shift'),
+        backgroundColor: lightBg,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.black87,
+            size: 20,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Jadwal Shift',
+          style: TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
         actions: [
           IconButton(
             onPressed: _refreshShifts,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded, color: Colors.black87),
             tooltip: 'Muat ulang',
           ),
         ],
@@ -495,75 +628,133 @@ class _ShiftsPageState extends State<ShiftsPage> {
       floatingActionButton: _isManager
           ? FloatingActionButton.extended(
               onPressed: _showAddShiftDialog,
-              icon: const Icon(Icons.add),
-              label: const Text('Tambah Jadwal'),
+              backgroundColor: primaryBrown,
+              foregroundColor: Colors.white,
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text(
+                'Tambah Jadwal',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             )
           : null,
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: () => _changeWeek(-1),
-                  tooltip: 'Minggu sebelumnya',
-                  icon: const Icon(Icons.chevron_left),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
-                Expanded(
-                  child: Column(
-                    children: [
-                      const Text(
-                        'Jadwal Mingguan',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        '${_formatDate(_weekStart)} – '
-                        '${_formatDate(
-                          _weekStart.add(const Duration(days: 6)),
-                        )}',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
+              ],
+            ),
+            child: Column(
+              children: [
+                const Text(
+                  'Jadwal Mingguan',
+                  style: TextStyle(
+                    color: Colors.black45,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                IconButton(
-                  onPressed: () => _changeWeek(1),
-                  tooltip: 'Minggu berikutnya',
-                  icon: const Icon(Icons.chevron_right),
+                const SizedBox(height: 4),
+                Text(
+                  '${_formatDate(_weekStart)} – ${_formatDate(_weekStart.add(const Duration(days: 6)))}',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _changeWeek(-1),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFEFE8E1)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        icon: const Icon(
+                          Icons.chevron_left_rounded,
+                          color: primaryBrown,
+                        ),
+                        label: const Text(
+                          'Sebelumnya',
+                          style: TextStyle(color: primaryBrown),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _changeWeek(1),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFEFE8E1)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        icon: const Icon(
+                          Icons.chevron_right_rounded,
+                          color: primaryBrown,
+                        ),
+                        label: const Text(
+                          'Berikutnya',
+                          style: TextStyle(color: primaryBrown),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
             child: DropdownButtonFormField<String>(
               initialValue: _selectedBranch,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.white,
                 labelText: 'Filter Cabang',
-                border: OutlineInputBorder(),
+                labelStyle: const TextStyle(color: Colors.black54),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: Color(0xFFEFE8E1)),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
               ),
+              dropdownColor: Colors.white,
+              borderRadius: BorderRadius.circular(16),
               items: const [
-                DropdownMenuItem(
-                  value: 'Semua',
-                  child: Text('Semua Cabang'),
-                ),
-                DropdownMenuItem(
-                  value: 'A',
-                  child: Text('Cabang A'),
-                ),
-                DropdownMenuItem(
-                  value: 'B',
-                  child: Text('Cabang B'),
-                ),
+                DropdownMenuItem(value: 'Semua', child: Text('Semua Cabang')),
+                DropdownMenuItem(value: 'A', child: Text('Cabang A')),
+                DropdownMenuItem(value: 'B', child: Text('Cabang B')),
               ],
               onChanged: (value) {
                 if (value == null) return;
-
-                setState(() {
-                  _selectedBranch = value;
-                });
+                setState(() => _selectedBranch = value);
               },
             ),
           ),
@@ -573,10 +764,9 @@ class _ShiftsPageState extends State<ShiftsPage> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
-                    child: CircularProgressIndicator(),
+                    child: CircularProgressIndicator(color: primaryBrown),
                   );
                 }
-
                 if (snapshot.hasError) {
                   return Center(
                     child: Padding(
@@ -584,11 +774,11 @@ class _ShiftsPageState extends State<ShiftsPage> {
                       child: Text(
                         'Gagal memuat jadwal:\n${snapshot.error}',
                         textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.black54),
                       ),
                     ),
                   );
                 }
-
                 return _buildWeeklySchedule(snapshot.data ?? []);
               },
             ),

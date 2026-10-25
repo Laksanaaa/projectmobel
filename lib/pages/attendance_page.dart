@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -11,10 +10,7 @@ import '../models/app_user.dart';
 class AttendancePage extends StatefulWidget {
   final AppUser user;
 
-  const AttendancePage({
-    super.key,
-    required this.user,
-  });
+  const AttendancePage({super.key, required this.user});
 
   @override
   State<AttendancePage> createState() => _AttendancePageState();
@@ -28,17 +24,15 @@ class _AttendancePageState extends State<AttendancePage> {
   bool _processing = false;
   String? _error;
 
-  Uri get _attendanceUri =>
-      Uri.parse('${ApiConfig.baseUrl}/attendance.php');
+  Uri get _attendanceUri => Uri.parse('${ApiConfig.baseUrl}/attendance.php');
 
-  Uri get _shiftsUri =>
-      Uri.parse('${ApiConfig.baseUrl}/shifts.php');
+  Uri get _shiftsUri => Uri.parse('${ApiConfig.baseUrl}/shifts.php');
 
   Map<String, String> get _headers => {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer ${widget.user.token}',
-      };
+    'Accept': 'application/json',
+    'Content-Type': 'application/json; charset=UTF-8',
+    'Authorization': 'Bearer ${widget.user.token}',
+  };
 
   bool get _isManager => widget.user.role == UserRole.manager;
 
@@ -48,9 +42,7 @@ class _AttendancePageState extends State<AttendancePage> {
     _loadData();
   }
 
-  Future<Map<String, dynamic>> _getJson(
-    http.Response response,
-  ) async {
+  Future<Map<String, dynamic>> _getJson(http.Response response) async {
     final dynamic decoded = jsonDecode(response.body);
 
     if (decoded is! Map<String, dynamic>) {
@@ -64,9 +56,7 @@ class _AttendancePageState extends State<AttendancePage> {
     }
 
     if (decoded['success'] != true) {
-      throw Exception(
-        decoded['message']?.toString() ?? 'Permintaan gagal.',
-      );
+      throw Exception(decoded['message']?.toString() ?? 'Permintaan gagal.');
     }
 
     return decoded;
@@ -82,10 +72,12 @@ class _AttendancePageState extends State<AttendancePage> {
 
     try {
       final responses = await Future.wait([
-        http.get(_attendanceUri, headers: _headers)
+        http
+            .get(_attendanceUri, headers: _headers)
             .timeout(const Duration(seconds: 15)),
         if (!_isManager)
-          http.get(_shiftsUri, headers: _headers)
+          http
+              .get(_shiftsUri, headers: _headers)
               .timeout(const Duration(seconds: 15)),
       ]);
 
@@ -193,11 +185,7 @@ class _AttendancePageState extends State<AttendancePage> {
       }
 
       final response = await http
-          .post(
-            _attendanceUri,
-            headers: _headers,
-            body: jsonEncode(body),
-          )
+          .post(_attendanceUri, headers: _headers, body: jsonEncode(body))
           .timeout(const Duration(seconds: 20));
 
       final result = await _getJson(response);
@@ -206,9 +194,7 @@ class _AttendancePageState extends State<AttendancePage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            result['message']?.toString() ?? 'Absensi berhasil.',
-          ),
+          content: Text(result['message']?.toString() ?? 'Absensi berhasil.'),
         ),
       );
 
@@ -274,29 +260,54 @@ class _AttendancePageState extends State<AttendancePage> {
   bool _isOpenAttendance(Map<String, dynamic> record) {
     return record['check_in'] != null &&
         record['check_in'].toString().isNotEmpty &&
-        (record['check_out'] == null ||
-            record['check_out'].toString().isEmpty);
+        (record['check_out'] == null || record['check_out'].toString().isEmpty);
   }
 
   @override
   Widget build(BuildContext context) {
+    const lightBg = Color(0xFFFAFAFA);
+    const primaryBrown = Color(0xFF8C5E3C);
+
     return Scaffold(
+      backgroundColor: lightBg,
       appBar: AppBar(
-        title: const Text('Absensi'),
+        backgroundColor: lightBg,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.black87,
+            size: 20,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Absensi',
+          style: TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
         actions: [
           IconButton(
             onPressed: _loading || _processing ? null : _loadData,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded, color: Colors.black87),
             tooltip: 'Muat ulang',
           ),
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: primaryBrown))
           : RefreshIndicator(
+              color: primaryBrown,
               onRefresh: _loadData,
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 children: [
                   _buildInfoCard(),
                   if (_error != null) ...[
@@ -304,18 +315,19 @@ class _AttendancePageState extends State<AttendancePage> {
                     _buildErrorCard(),
                   ],
                   if (!_isManager) ...[
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
                     const Text(
                       'Jadwal untuk Check-in',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        color: Colors.black87,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     _buildShiftList(),
                   ],
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
                   Text(
                     _isManager
                         ? 'Riwayat Absensi Karyawan'
@@ -323,14 +335,18 @@ class _AttendancePageState extends State<AttendancePage> {
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   if (_records.isEmpty)
                     const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
+                      padding: EdgeInsets.symmetric(vertical: 40),
                       child: Center(
-                        child: Text('Belum ada data absensi.'),
+                        child: Text(
+                          'Belum ada data absensi.',
+                          style: TextStyle(color: Colors.black45),
+                        ),
                       ),
                     )
                   else
@@ -342,59 +358,76 @@ class _AttendancePageState extends State<AttendancePage> {
   }
 
   Widget _buildInfoCard() {
-    return Card(
-      color: const Color(0xFFF0E5DA),
-      child: const Padding(
-        padding: EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              Icons.location_on_outlined,
-              size: 30,
-              color: Color(0xFF6F4E37),
+    const primaryBrown = Color(0xFF8C5E3C);
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9F5F2),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFEFE8E1)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
             ),
-            SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Absensi Cabang A',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Check-in dan check-out hanya dapat dilakukan '
-                    'dalam radius 100 meter dari lokasi Cabang A. '
-                    'Pastikan GPS perangkat aktif.',
-                  ),
-                ],
-              ),
+            child: const Icon(
+              Icons.location_on_rounded,
+              size: 24,
+              color: primaryBrown,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Absensi Cabang A',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: Colors.black87,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Check-in dan check-out hanya dapat dilakukan dalam radius 100 meter dari lokasi Cabang A. Pastikan GPS aktif.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.black54,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildErrorCard() {
-    return Card(
-      color: Colors.red.shade50,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Text(
-          _error!,
-          style: TextStyle(color: Colors.red.shade900),
-        ),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.red.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        _error!,
+        style: TextStyle(color: Colors.red.shade800, fontSize: 13),
       ),
     );
   }
 
   Widget _buildShiftList() {
+    const primaryBrown = Color(0xFF8C5E3C);
 
     final availableShifts = _shifts.where((shift) {
       final date = shift['shift_date']?.toString();
@@ -402,21 +435,32 @@ class _AttendancePageState extends State<AttendancePage> {
 
       if (date == null || id == null) return false;
 
-      // Jangan tampilkan shift yang sudah memiliki check-in.
-      return !_records.any((record) =>
-          record['shift_id'].toString() == id.toString() &&
-          record['check_in'] != null &&
-          record['check_in'].toString().isNotEmpty);
+      return !_records.any(
+        (record) =>
+            record['shift_id'].toString() == id.toString() &&
+            record['check_in'] != null &&
+            record['check_in'].toString().isNotEmpty,
+      );
     }).toList();
 
     if (availableShifts.isEmpty) {
-      return const Card(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Text(
-            'Tidak ada jadwal yang tersedia untuk check-in. '
-            'Pastikan jadwal shift sudah dibuat.',
-          ),
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Text(
+          'Tidak ada jadwal yang tersedia untuk check-in. Pastikan jadwal shift sudah dibuat.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.black54, fontSize: 13),
         ),
       );
     }
@@ -425,28 +469,75 @@ class _AttendancePageState extends State<AttendancePage> {
       children: availableShifts.map((shift) {
         final shiftId = int.tryParse(shift['id'].toString());
 
-        return Card(
-          child: ListTile(
-            leading: const Icon(
-              Icons.calendar_month,
-              color: Color(0xFF6F4E37),
-            ),
-            title: Text(
-              '${shift['branch'] ?? 'Cabang'} • '
-              '${_formatDate(shift['shift_date'])}',
-            ),
-            subtitle: Text(
-              '${_formatTime(shift['start_time'])}–'
-              '${_formatTime(shift['end_time'])}',
-            ),
-            trailing: ElevatedButton(
-              onPressed: _processing || shiftId == null
-                  ? null
-                  : () => _submitAttendance(
-                        action: 'check_in',
-                        id: shiftId,
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF9F5F2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.calendar_month_rounded,
+                    color: primaryBrown,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${shift['branch'] ?? 'Cabang'} •${_formatDate(shift['shift_date'])}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
                       ),
-              child: const Text('Check-in'),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${_formatTime(shift['start_time'])}–${_formatTime(shift['end_time'])}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: _processing || shiftId == null
+                      ? null
+                      : () =>
+                            _submitAttendance(action: 'check_in', id: shiftId),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryBrown,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: const Text('Check-in'),
+                ),
+              ],
             ),
           ),
         );
@@ -455,28 +546,58 @@ class _AttendancePageState extends State<AttendancePage> {
   }
 
   Widget _buildAttendanceCard(Map<String, dynamic> record) {
+    const primaryBrown = Color(0xFF8C5E3C);
     final open = _isOpenAttendance(record);
     final employeeName =
         record['actual_employee_name'] ??
         record['scheduled_employee_name'] ??
         'Karyawan';
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
+    final statusText = _statusLabel(record['status']);
+    Color statusBgColor = Colors.grey.withValues(alpha: 0.1);
+    Color statusTextColor = Colors.grey.shade700;
+
+    if (statusText == 'Hadir') {
+      statusBgColor = Colors.green.withValues(alpha: 0.1);
+      statusTextColor = Colors.green.shade700;
+    } else if (statusText == 'Terlambat') {
+      statusBgColor = Colors.orange.withValues(alpha: 0.1);
+      statusTextColor = Colors.orange.shade800;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  Icons.fingerprint,
-                  color: Color(0xFF6F4E37),
-                  size: 28,
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF9F5F2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.fingerprint_rounded,
+                    color: primaryBrown,
+                    size: 24,
+                  ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -487,41 +608,82 @@ class _AttendancePageState extends State<AttendancePage> {
                             : '${record['branch'] ?? 'Cabang'}',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          fontSize: 15,
+                          color: Colors.black87,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
-                        '${_formatDate(record['shift_date'])} • '
-                        '${_formatTime(record['start_time'])}–'
-                        '${_formatTime(record['end_time'])}',
+                        '${_formatDate(record['shift_date'])} • ${_formatTime(record['start_time'])}–${_formatTime(record['end_time'])}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                Chip(
-                  label: Text(_statusLabel(record['status'])),
-                  visualDensity: VisualDensity.compact,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusBgColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    statusText,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: statusTextColor,
+                    ),
+                  ),
                 ),
               ],
             ),
-            const Divider(height: 22),
-            Text('Check-in: ${_formatTime(record['check_in'])}'),
-            const SizedBox(height: 4),
-            Text('Check-out: ${_formatTime(record['check_out'])}'),
+            const SizedBox(height: 12),
+            const Divider(height: 1, color: Color(0xFFF0F0F0)),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Check-in: ${_formatTime(record['check_in'])}',
+                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                ),
+                Text(
+                  'Check-out: ${_formatTime(record['check_out'])}',
+                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                ),
+              ],
+            ),
             if (open && !_isManager) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: _processing
                       ? null
                       : () => _submitAttendance(
-                            action: 'check_out',
-                            id: int.parse(record['id'].toString()),
-                          ),
-                  icon: const Icon(Icons.logout),
-                  label: const Text('Check-out'),
+                          action: 'check_out',
+                          id: int.parse(record['id'].toString()),
+                        ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: primaryBrown),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  icon: const Icon(Icons.logout_rounded, color: primaryBrown),
+                  label: const Text(
+                    'Check-out',
+                    style: TextStyle(
+                      color: primaryBrown,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],
