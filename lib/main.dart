@@ -1,13 +1,23 @@
-
 import 'package:flutter/material.dart';
-import 'pages/login_page.dart';
 
-void main() {
-  runApp(const CafeManagementApp());
+import 'pages/login_page.dart';
+import 'pages/home_page.dart';
+import 'services/session_manager.dart';
+import 'models/app_user.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Cek apakah ada sesi aktif yang belum kedaluwarsa
+  AppUser? activeUser = await SessionManager.getValidSession();
+
+  runApp(MyApp(initialUser: activeUser));
 }
 
-class CafeManagementApp extends StatelessWidget {
-  const CafeManagementApp({super.key});
+class MyApp extends StatelessWidget {
+  final AppUser? initialUser;
+
+  const MyApp({super.key, this.initialUser});
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +37,9 @@ class CafeManagementApp extends StatelessWidget {
           centerTitle: false,
         ),
       ),
-      home: const LoginPage(),
+      home: initialUser != null
+          ? HomePage(user: initialUser!)
+          : const LoginPage(),
     );
   }
 }

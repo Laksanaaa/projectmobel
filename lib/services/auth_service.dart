@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'dart:convert';
 
@@ -16,9 +15,7 @@ class AuthService {
 
     // Validasi input sebelum mengirim permintaan ke server.
     if (normalizedUsername.isEmpty || password.isEmpty) {
-      throw const AuthException(
-        'Username dan password wajib diisi.',
-      );
+      throw const AuthException('Username dan password wajib diisi.');
     }
 
     try {
@@ -40,9 +37,7 @@ class AuthService {
       final dynamic decoded = jsonDecode(response.body);
 
       if (decoded is! Map<String, dynamic>) {
-        throw const AuthException(
-          'Format respons dari server tidak valid.',
-        );
+        throw const AuthException('Format respons dari server tidak valid.');
       }
 
       // Username/password salah atau akun tidak aktif.
@@ -55,9 +50,7 @@ class AuthService {
         final message = decoded['message'];
 
         throw AuthException(
-          message is String
-              ? message
-              : 'Server gagal memproses login.',
+          message is String ? message : 'Server gagal memproses login.',
         );
       }
 
@@ -67,15 +60,13 @@ class AuthService {
         final message = decoded['message'];
 
         throw AuthException(
-          message is String
-              ? message
-              : 'Respons login tidak sesuai format.',
+          message is String ? message : 'Respons login tidak sesuai format.',
         );
       }
 
       // Ubah data JSON menjadi objek AppUser.
       final userData = decoded['data'] as Map<String, dynamic>;
-      final user = AppUser.fromMap(userData);
+      final user = AppUser.fromJson(userData);
 
       // Jangan lanjutkan login jika akun tidak aktif.
       if (!user.isActive) {
@@ -92,18 +83,14 @@ class AuthService {
 
       return user;
     } on TimeoutException {
-      throw const AuthException(
-        'Server terlalu lama merespons. Coba lagi.',
-      );
+      throw const AuthException('Server terlalu lama merespons. Coba lagi.');
     } on http.ClientException {
       throw const AuthException(
         'Tidak dapat terhubung ke server. '
         'Periksa koneksi dan URL API.',
       );
     } on FormatException {
-      throw const AuthException(
-        'Respons server bukan JSON yang valid.',
-      );
+      throw const AuthException('Respons server bukan JSON yang valid.');
     }
   }
 }

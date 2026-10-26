@@ -1,9 +1,4 @@
-
-enum UserRole {
-  manager,
-  akuntan,
-  karyawan,
-}
+enum UserRole { manager, akuntan, karyawan }
 
 class AppUser {
   final String id;
@@ -33,19 +28,20 @@ class AppUser {
     }
   }
 
-  factory AppUser.fromMap(Map<String, dynamic> map) {
+  factory AppUser.fromJson(Map<String, dynamic> json) {
     return AppUser(
-      id: map['id'].toString(),
-      username: map['username'] as String,
-      fullName: map['full_name'] as String,
+      id: json['id'].toString(),
+      username: json['username'] as String,
+      fullName: json['full_name'] as String,
       role: UserRole.values.firstWhere(
-        (item) => item.name == map['role'],
+        (item) => item.name == json['role'],
         orElse: () => UserRole.karyawan,
       ),
-      isActive: map['is_active'] == true ||
-          map['is_active'] == 1 ||
-          map['is_active'] == '1',
-      token: map['token'] as String? ?? '',
+      isActive:
+          json['is_active'] == true ||
+          json['is_active'] == 1 ||
+          json['is_active'] == '1',
+      token: json['token'] as String? ?? '',
     );
   }
 
@@ -59,4 +55,7 @@ class AppUser {
       'token': token,
     };
   }
+
+  // Menambahkan toJson() yang mengarah ke toMap()
+  Map<String, dynamic> toJson() => toMap();
 }

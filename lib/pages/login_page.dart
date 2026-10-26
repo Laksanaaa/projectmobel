@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:project/services/session_manager.dart';
 
 import '../services/auth_service.dart';
 import 'home_page.dart';
@@ -54,10 +55,14 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomePage(user: user)),
-      );
+      await SessionManager.saveSession(user);
+
+      if (context.mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomePage(user: user)),
+        );
+      }
     } on AuthException catch (e) {
       if (!mounted) return;
 
